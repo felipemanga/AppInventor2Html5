@@ -1,0 +1,142 @@
+<html>
+<head>
+<script src="js/libs/utils.js"></script>
+<script src="js/libs/csvparser.js"></script>
+<script src="js/libs/jszip.min.js"></script>
+<script src="js/libs/jsziputils.js"></script>
+<script src="js/xmlToJS.js"></script>
+<script src="js/renderUI.js"></script>
+<script src="js/ui/UserInterface.js"></script>
+<script src="js/ui/Layout.js"></script>
+<script src="js/ui/Drawing.js"></script>
+<script src="js/ui/Sensors.js"></script>
+<script src="js/ui/Storage.js"></script>
+<script src="js/aihtml.js"></script>
+<script>
+
+window.onload = function(){
+	function loadaia(f, action){
+		if( !(f instanceof File) )
+		{
+			var e = document.getElementById("fileelem");
+			if( !e.files.length ) return;
+			f = e.files[0];
+		}
+		var fr = new FileReader();
+		fr.onload = function(){
+			AIA.load(null, fr.result, action);
+		};
+		fr.readAsBinaryString(f);
+		if( dropZone ) document.body.removeChild( dropZone );
+	}
+	
+	function handleFileSelect(action, evt) {
+		if( evt.stopPropagation ) evt.stopPropagation();
+		evt.preventDefault();
+
+		var files = evt.dataTransfer.files; // FileList object.
+
+		for (var i = 0, f; f = files[i]; i++) {
+			if( f.name.match(/\.aia$/) )
+			{
+				loadaia(f, action);
+				return;
+			}
+		}
+	}
+
+	function handleDragOver(evt) {
+		if( evt.stopPropagation ) evt.stopPropagation();
+		evt.preventDefault();
+		evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+	}
+
+	var dropZone = document.getElementById('dropZone');
+	var dropZoneRun = document.getElementById('dropZoneRun');
+	var dropZoneSave = document.getElementById('dropZoneSave');
+	if( document.location.href.match(/^https?:/i) != null )
+	{
+		dropZone.style.display = "block";
+		if( _zipFilePath ) AIA.load(null, null, "start");
+		else{
+			if( dropZoneRun )
+			{
+				dropZoneRun.addEventListener('dragover', handleDragOver, false);
+				dropZoneRun.addEventListener('drop', handleFileSelect.bind(null, 'start'), false);
+			}
+			if( dropZoneSave )
+			{
+				dropZoneSave.addEventListener('dragover', handleDragOver, false);
+				dropZoneSave.addEventListener('drop', handleFileSelect.bind(null, 'exportZip'), false);
+			}
+		}
+	}
+};
+
+if( document.location.href.match(/^https?:/i) == null )
+{
+	document.addEventListener('deviceready', function(){start();});
+}
+</script>
+
+<style>
+html, body{
+margin:0;
+height: 100%;
+width: 100%;
+overflow: hidden;
+}
+
+.Component{
+	position:absolute;
+	box-sizing: border-box;
+	background-size: 100% 100%;
+	background-position: 50% 50%;
+	background-repeat: no-repeat;
+}
+
+.Form {
+	height: 100%;
+	width: 100%;
+}
+
+.Flex {
+}
+
+.HorizontalArrangement {
+}
+.HorizontalArrangement > * {
+	display: inline-block;
+}
+.VerticalArrangement, .TableArrangement {
+}
+.VerticalArrangement > *, .TableArrangement > * {
+	display: block;
+}
+.Button {
+	vertical-align: middle;
+	text-align: center;
+	line-height: 20px;
+}
+
+.ListView {
+	overflow: auto;
+}
+
+.ListViewItem {
+	padding: 10px;
+	border-bottom-style: solid;
+	border-bottom-color: white;
+}
+</style>
+</head>
+<body>
+	<div id="dropZone" style="position: absolute; width: calc(100% - 40px); box-sizing: border-box; width: calc(100% - 40px); top: 0; margin: 20px; display: none;">
+	<div id="dropZoneRun" style="margin: 0px 20px 20px 20px; font: 42px sans-serif; text-align: center; color: #333; background-color: #EEE; padding: 50px; border-style: dashed;">
+		<div>Run an AIA by dragging-and-dropping it here.</div>
+	</div>
+	<div id="dropZoneSave" style="margin: 0px 20px 20px 20px; font: 42px sans-serif; text-align: center; color: #333; background-color: #EEE; padding: 50px; border-style: dashed;">
+		<div>Translate an AIA to HTML5 by dragging-and-dropping it here.</div>
+	</div>
+</body>
+</html>
