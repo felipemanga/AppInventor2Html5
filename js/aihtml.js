@@ -187,7 +187,7 @@ AIA.exportZip = function(){
 
 	for( var f in AIA.zip.files )
 	{
-		if( /^assets\/.*$/i.test(f) )
+		if( /^assets\/.*$/i.test(f) && AIA.zip.file(f) )
 		{
 			ozip.file(f, AIA.zip.file(f).asBinary(), {binary: true});
 		}else if( /^src\/.*\.bky$/i.test(f) )
