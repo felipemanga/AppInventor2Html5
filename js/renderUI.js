@@ -23,6 +23,7 @@ SOFTWARE.
 */
 
 (function(){
+var onPhone = document.location.href.toLowerCase().indexOf("file:") == 0;
 
 var components = {};
 
@@ -60,15 +61,22 @@ function Component( ui, el, desc )
 	
 	if( el )
 	{
-		var events = {};
+		this.dom = DOC.create(el, UTIL.merge({"id":ui.$Name, "className":"Component " + ui.$Type}, desc));
+		this.dom.controller = this;
 		for( var k in this )
 		{
-			if( typeof this[k] == "function" && k.indexOf("on") == 0 && k in document.body )
-				events[k] = this[k].bind(null, this);
+			if( typeof this[k] == "function" && k.indexOf("on") == 0 )
+			{
+				var nk = k.substr(2);
+				var func = this[k].bind(null, this);
+				if( onPhone )
+				{
+					nk = {mousedown:"touchstart", mouseup:"touchend", mousemove:"touchmove", click:1}[nk] || nk;
+					if( nk == 1 ) continue;
+				}				
+				this.dom.addEventListener( nk, func );
+			}
 		}
-
-		this.dom = DOC.create(el, UTIL.merge({"id":ui.$Name, "className":"Component " + ui.$Type}, events, desc));
-		this.dom.controller = this;
 	}
 
 	this.index[ ui.$Name ] = this;
@@ -129,14 +137,15 @@ function Component( ui, el, desc )
 
 function handler(name, com, evt)
 {
-	if( !com.Enabled ) 
-		return;
-
+	evt.preventDefault();
+	if( !com.Enabled ) return;
 	var c = com.screen[com.$Name + "_" + name];
-	// console.log(com.$Name + "_" + name);
-	if(c) 
-		c();
-	return true;
+	console.log(com.$Name + "_" + name, evt.type);
+	c && c();
+	if( name == "TouchDown" ) com.dom.__doClick = true;
+	if( name == "Drag" ) com.dom.__doClick = false;
+	if( name == "TouchUp" && com.dom.__doClick && onPhone && com.onclick ) com.onclick( com, evt );
+	return false;
 }
 
 prepare(Component, null, {
@@ -297,6 +306,7 @@ prepare(Component, null, {
     ondblclick:handler.bind(null, "LongClick"),
     onfocus:handler.bind(null, "GotFocus"),
     onblur:handler.bind(null, "LostFocus"),
+    onmousemove:handler.bind(null, "Drag"),
     onmousedown:handler.bind(null, "TouchDown"),
     onmouseup:handler.bind(null, "TouchUp")
 });

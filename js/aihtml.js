@@ -164,7 +164,7 @@ AIA.load = function( path, data, cb ){
 AIA.exportZip = function(){
 	var pending = 1;
 	var ozip = new JSZip();
-	var html = "<html><head>";
+	var html = "<html><head><" + 'script src="cordova.js"></' + 'script><' + 'script src="phonegap.js"></' + 'script>';
 	var includes = [];
 	var styles = [];
 	var aiainfo = "";
@@ -234,7 +234,11 @@ AIA.start = function()
 		if( window.ActiveScreen )
 			window.ActiveScreen.$resize();
 	});
-
+	window.addEventListener("contextmenu", function(event) {
+		 event.preventDefault();
+		 event.stopPropagation();
+		 return false;
+	});
     function openScreen( classPath, startValue )
     {
     	if( classPath.indexOf("appinventor.") != 0 )
