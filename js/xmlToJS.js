@@ -309,6 +309,11 @@ function xmlToJS( xml )
             return "$SCREEN.__StartValue";
         },
 
+        controls_closeScreen: function( xml, index ){
+            if( !isInFunc ) return "";
+            return "\twindow.closeScreen();\n";
+        },
+
         controls_closeScreenWithValue: function( xml, index )
         {
             if( !isInFunc ) return "";
@@ -518,6 +523,15 @@ function xmlToJS( xml )
         {
             if( !isInFunc ) return "";
             return iterate(index.$name.TEXT) + ".split(" + iterate(index.$name.AT) + ")";
+        },
+
+        text_changeCase:function( xml, index )
+        {
+            if( !isInFunc || !index.$name.TEXT ) return "";
+            if( index.$name.OP.textContent == "DOWNCASE" ) return "(''+" + iterate(index.$name.TEXT) + ").toLowerCase()";
+            if( index.$name.OP.textContent == "UPCASE" ) return "(''+" + iterate(index.$name.TEXT) + ").toUpperCase()";
+            console.error(xml);
+            return "ERROR"
         },
 
         logic_boolean:function( xml, index )
