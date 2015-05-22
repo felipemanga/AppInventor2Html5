@@ -16,6 +16,9 @@ defineComponent("TextBox", "Component", function( ui ){
 	},
 	get$NumbersOnly:false,
 	get$MultiLine:false,
+	get$Text:function(){
+		return this.dom.value;
+	},
 	set$Text:function( t ){
 		if( this.ui.NumbersOnly )
 		{
@@ -23,7 +26,7 @@ defineComponent("TextBox", "Component", function( ui ){
 			else t = (""+t).replace(/[^0-9.]+/g, "");
 		}
 		this.set$Text.SUPER.call(this, t);
-		this.dom.value = this.Text;
+		this.dom.value = t;
 	}
 });
 

@@ -12,6 +12,31 @@ defineComponent("File", "Component", function( ui ){
     });
 });
 
+defineComponent("TinyDB", "Component", function(ui){
+	this.SUPER(ui);
+	var THIS = this;
+},{
+	ClearAll:function(){
+		localStorage.clear();
+	},
+	ClearTag:function(tag){
+		localStorage.removeItem(tag);
+	},
+	GetTags:function(){
+		var ret = [];
+		for( var i=0; i<localStorage.length; ++i )
+			ret.push(localStorage.key(i));
+		return ret;
+	},
+	GetValue:function(tag, valueIfTagNotThere){
+		if( tag in localStorage ) return localStorage[tag];
+		return valueIfTagNotThere;
+	},
+	StoreValue:function(tag, valueToStore){
+		localStorage[tag] = valueToStore;
+	}
+});
+
 defineComponent("Web", "Component", function( ui ){
 	this.SUPER(ui);
 	var THIS = this;
