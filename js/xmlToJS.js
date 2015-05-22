@@ -189,7 +189,7 @@ function xmlToJS( xml )
         {
             if( !isInFunc ) return "";
             var funcName = index.mutation[0].getAttribute("method_name");
-            var src = '\t';
+            var src = '';
             var instance_name = index.mutation[0].getAttribute("instance_name");
             if( instance_name ) src += '$COM' + deref(instance_name)
             else 
@@ -201,7 +201,9 @@ function xmlToJS( xml )
                 if( argNum ) src += ",";
                 src += iterate( index.$name["ARG" + argNum] );
             }
-            src += " );\n";
+            src += " )";
+            if( index.next )
+                src = "\t" + src + ";\n";
             return src;
         },
 

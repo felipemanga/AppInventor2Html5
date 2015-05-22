@@ -54,12 +54,16 @@ getImageFromZip:function(name)
 
 Color: function(list)
 {
-	this.r = list[0];
-	this.g = list[1];
-	this.b = list[2];
+	var i=0;
+	if(list.length==4) this.a = list[i++];
+	else this.a = 255;
+	this.r = list[i++];
+	this.g = list[i++];
+	this.b = list[i];
 	this.addMethod( "toRGBString", function(){
 		return "rgb(" + this.r + ", " + this.g + ", " + this.b + ")";
 	});
+	this.addMethod( "getAlpha", function(){ return this.a/255;} )
 },
 
 random: function( f, t )
@@ -291,13 +295,14 @@ AIA.start = function()
 		});
 
 		this.addMethod( "$stop", function(){
-			document.body.removeChild(root.dom);
+			root.dom.parentNode.removeChild(root.dom);
 			propagate("$stop");
 		});
 
 		this.addMethod( "$activate", function( startValue, otherScreenName ){
 			document.body.appendChild(root.dom);
 			propagate("$activate");
+			// var THIS=this; setTimeout(function(){ THIS.$resize(); },1);
 			this.$resize();
 			if( !otherScreenName )
 			{

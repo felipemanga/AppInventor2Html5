@@ -103,6 +103,7 @@ function Component( ui, el, desc )
 				v = v||g;
 				g = null;
 			}
+			THIS["__default" + k] = v;
 
 			if( !g ) g = defaultGetter.bind(THIS, k);
 
@@ -137,11 +138,12 @@ function Component( ui, el, desc )
 
 function handler(name, com, evt)
 {
-	evt.preventDefault();
+	if( evt.target.tagName != "INPUT" && onPhone ) 
+		evt.preventDefault();
 	if( !com.Enabled ) return;
 	var c = com.screen[com.$Name + "_" + name];
-	console.log(com.$Name + "_" + name, evt.type);
-	c && c();
+	if( evt.type != "mousemove" ) console.log(com.$Name + "_" + name, evt.type);
+	if( c ) c();
 	if( name == "TouchDown" ) com.dom.__doClick = true;
 	if( name == "Drag" ) com.dom.__doClick = false;
 	if( name == "TouchUp" && com.dom.__doClick && onPhone && com.onclick ) com.onclick( com, evt );
@@ -157,6 +159,9 @@ prepare(Component, null, {
     	this.dom.style.width = w + "px";
     	this.dom.style.height = h + "px";
     },
+	calcMinSize:function(){
+		this.Text = this.Text;
+	},
     get$$Name:"",
     get$$Type:0,
     get$$Version:0,
@@ -222,32 +227,37 @@ prepare(Component, null, {
 	set$Text: function( t ){
 		if( t === undefined ) t = "";
 		this.dom.textContent = this.__properties.Text = t;
-		var marginX = this.marginX, marginY = this.marginY;
-		if( !this.marginX )
-		{
-			this.marginX = marginX = parseInt(DOC.getStyle(this.dom, "padding-left")) + 
-									 parseInt(DOC.getStyle(this.dom, "padding-right")) +
-									 parseInt(DOC.getStyle(this.dom, "border-left")) +
-									 parseInt(DOC.getStyle(this.dom, "border-right"))
-									 ;
-			if( Number.isNaN(marginX) ) return;
-			this.marginY = marginY = parseInt(DOC.getStyle(this.dom, "padding-top")) + 
-									 parseInt(DOC.getStyle(this.dom, "padding-bottom")) +
-									 parseInt(DOC.getStyle(this.dom, "border-top")) +
-									 parseInt(DOC.getStyle(this.dom, "border-bottom"))
-									 ;
-			marginX++;
-			marginY++;
-		}
+		if( !this.FontSize ) return;
 
-		var w = (Math.floor(DOC.getTextWidth(t, this.FontSize+"px " + this.FontTypeface))+(marginX||0)) + "px";
-		var h = (this.FontSize+(marginY||0))+"px";
-		this.dom.style.minWidth = w;
-		this.dom.style.minHeight = h;
 		if( this.ui.Width === undefined )
+		{
+			var w = this.__defaultWidth;
+			if( !w )
+			{
+				var marginX = (
+								 parseInt(DOC.getStyle(this.dom, "padding-left")) + 
+								 parseInt(DOC.getStyle(this.dom, "padding-right")) +
+								 parseInt(DOC.getStyle(this.dom, "border-left")) +
+								 parseInt(DOC.getStyle(this.dom, "border-right"))
+								 )||0;
+				w = (Math.floor(DOC.getTextWidth(t, (this.FontSize||20)+"px " + (this.dom.style.fontFamily || "sans-serif")))+marginX+1) + "px";
+			}
+			this.dom.style.minWidth = w;
 			this.__properties.Width = w;
+		}
 		if( this.ui.Height === undefined )
+		{
+			var lh = parseInt(DOC.getStyle(this.dom, "line-height")) || 0;
+			var marginY = (
+						 parseInt(DOC.getStyle(this.dom, "padding-top")) + 
+						 parseInt(DOC.getStyle(this.dom, "padding-bottom")) +
+						 parseInt(DOC.getStyle(this.dom, "border-top")) +
+						 parseInt(DOC.getStyle(this.dom, "border-bottom"))
+						 ) || 0;
+			var h = (this.__defaultHeight || (Math.max(this.FontSize, lh)+marginY+1))+"px";
+			this.dom.style.minHeight = h;
 			this.__properties.Height = h;
+		}
 		
 		return t;
 	},
@@ -277,7 +287,7 @@ prepare(Component, null, {
 		if( !this.dom ) return;
 		var face=["sans-serif", "serif", "MONOSPACE"][ parseInt(tf)-1 ] || "Arial";
 		this.dom.style.fontFamily = face;
-		this.Text = this.Text; // force recalc
+		if( this.Text ) this.Text = this.Text; // force recalc
 		this.__properties.FontTypeface = tf;
 		return tf;
 	},
@@ -336,6 +346,41 @@ function ComponentContainer(ui, el){
 	}
 }
 prepare(ComponentContainer, Component, {
+calcMinSize:function(){
+	var w=parseInt(this.Width || this.ui.Width) || 0;
+	var h=parseInt(this.Height || this.ui.Height) || 0;
+
+	if( (w != -2 || h != -2) && this.children )
+	{
+		for( var i=0, c; c=this.children[i]; ++i )
+		{
+			if( !c.dom || c.dom.style.display == "none" ) continue;
+
+			if( c.__properties.Width === undefined || c.__properties.Height === undefined ) 
+			{
+				if( "Text" in c.ui || c.Text ) c.Text = c.Text;
+				else if( c instanceof ComponentContainer ) c.calcMinSize();
+			}
+			var cw = parseInt(c.__properties.Width);
+			var ch = parseInt(c.__properties.Height);
+			if(w != -2 )
+			{
+				if( this.$Type == "HorizontalArrangement") w += cw;
+				else if( w < cw ) w = cw;
+			}
+			if(h != -2)
+			{
+				if( this.$Type != "HorizontalArrangement") h += ch;
+				else if( h < ch ) h = ch;
+			}
+		}
+	}
+
+	if( w != -2 ) w += "px";
+	this.__properties.Width = w;
+	if( h != -2 ) h += "px";
+	this.__properties.Height = h;
+},
 $resize:function(w, h){
 	if( !this.dom ) return;
 	this.dom.style.width = w + "px";
@@ -351,8 +396,7 @@ $resize:function(w, h){
 		{
 			if( !c.dom || c.dom.style.display == "none" ) continue;
 
-			if( c.__properties.Width === undefined || c.__properties.Height === undefined ) 
-				c.Text = c.Text;
+			if( c.__properties.Width === undefined || c.__properties.Height === undefined ) c.calcMinSize();
 
 			if( c.__properties.Width == -2 ) fullWidth++;
 			else knownWidth += parseInt(c.__properties.Width) || 0;
@@ -363,15 +407,33 @@ $resize:function(w, h){
 		if( isVert )
 		{
 			fullWidth = w;
-			if( fullHeight ) fullHeight = (h - knownHeight) / fullHeight;
+			if( fullHeight )
+			{
+				fullHeight = (h - knownHeight) / fullHeight;
+				knownHeight = h;
+			}
 		}
 		else
 		{
 			fullHeight = h;
-			if( fullWidth ) fullWidth = (w - knownWidth) / fullWidth;
+			if( fullWidth )
+			{
+				fullWidth = (w - knownWidth) / fullWidth;
+				knownWidth = w;
+			}
 		}
 
 		var acc=0;
+		if( isVert )
+		{
+			if( this.AlignVertical == 3 ) acc += h/2 - knownHeight/2;
+			else if( this.AlignVertical == 2 ) acc += h - knownHeight;
+		}
+		else
+		{
+			if( this.AlignHorizontal == 3 ) acc += w/2 - knownWidth/2;
+			else if( this.AlignHorizontal == 2 ) acc += w - knownWidth;
+		}
 		for( var i=0, c; c=this.children[i]; ++i )
 		{
 			if( !c.dom || c.dom.style.display == "none" ) continue;
@@ -387,6 +449,8 @@ $resize:function(w, h){
 				{
 					c.dom.style.top = acc + "px";
 					acc += ch;
+					if( this.AlignHorizontal==3 ) c.dom.style.left = (fullWidth/2 - cw/2) + "px";
+					else if( this.AlignHorizontal == 2 ) c.dom.style.left = (fullWidth - cw) + "px";
 				}
 				else
 				{
@@ -398,22 +462,8 @@ $resize:function(w, h){
 	}
 },
 get$$Components:0,
-set$AlignHorizontal:function(n){
-	var align = "Start";
-	if( n == 3 ) align = "Center";
-	else if( n == 2 ) align = "End";
-	else n = 0;
-	this.__properties.AlignHorizontal = n;
-	this.dom.className = this.dom.className.replace(/FlexH[A-Za-z]+/, "FlexH" + align);
-},
-set$AlignVertical:function(n){
-	var align = "Start";
-	if( n == 2 ) align = "Center";
-	else if( n == 3 ) align = "End";
-	else n = 0;
-	this.__properties.AlignHorizontal = n;
-	this.dom.className = this.dom.className.replace(/FlexV[A-Za-z]+/, "FlexV" + align);
-}
+get$AlignHorizontal:0,
+get$AlignVertical:0
 });
 
 function Dud( ui )
