@@ -121,3 +121,14 @@ defineComponent("Spinner", "Component", function( ui ){
     this.SUPER(ui, "select");
     this.Elements = [];
 });
+
+defineComponent("Notifier", "Component", function( ui ){
+	this.SUPER(ui);
+},{
+	
+},{
+	plugins:{
+		"org.apache.cordova.media":1
+		"org.apache.cordova.device":1
+	}
+})

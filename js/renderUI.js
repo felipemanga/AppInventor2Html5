@@ -27,14 +27,14 @@ var onPhone = document.location.href.toLowerCase().indexOf("file:") == 0;
 
 var components = {};
 
-window.defineComponent = function(name, base, func, obj)
+window.defineComponent = function(name, base, func, obj, statics)
 {
 	components[name] = func;
 	base = {"Component":Component, "ComponentContainer":ComponentContainer}[base] || components[base] || base;
-	prepare( func, base, obj );
+	prepare( func, base, obj, statics );
 };
 
-function prepare(func, base, obj){
+function prepare(func, base, obj, statics){
 	var ret={};
 	for( var k in obj )
 	{
@@ -48,6 +48,7 @@ function prepare(func, base, obj){
 		func.prototype.constructor = base;
 	}else func.prototype = obj;
 	components[func.name] = func;
+	UTIL.mergeTo( func, statics );
 	return ret;
 }
 
@@ -483,7 +484,9 @@ function createComponent( ui )
     return new components[ui.$Type]( ui );
 }
 
-
+window.getComponentClass = function(ui){
+    return components[ui.$Type];
+}
 
 window.renderUI = function( ui )
 {
