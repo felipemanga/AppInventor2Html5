@@ -46,11 +46,16 @@ defineComponent("ImageSprite", "Component", function ImageSprite( ui ){
 		this.__properties.Y = parseInt(y);
 		if( this.parent ) this.parent.__dirty = true;
 	},
+	MoveTo:function(x, y){
+		if( x == this.__properties.X && y == this.__properties.Y ) return;
+		this.__properties.X = parseInt(x);
+		this.__properties.Y = parseInt(y);
+		if( this.parent ) this.parent.__dirty = true;
+	},
 	set$Picture:function(file){
 		if( file == this.__properties.Picture ) return;
 		this.__properties.Picture = file;
 		var THIS=this;
-		if( this.parent ) this.parent.__dirty = true;
 
 		if( this.__image && this.__image.sprites && this.__image.sprites[this.__uid] == this )
 			delete this.__image.sprites[this.__uid];
@@ -59,6 +64,7 @@ defineComponent("ImageSprite", "Component", function ImageSprite( ui ){
 		{
 			this.__image = __SpriteCache[file];
 			this.__image.sprites[this.__uid] = this;
+			if( this.parent ) this.parent.__dirty = true;
 		}
 		else
 		{
@@ -97,16 +103,23 @@ defineComponent("Canvas", "ComponentContainer", function Canvas( ui )
     this.SUPER( ui, "canvas" );
     var ctx = this.ctx2d = this.dom.getContext("2d");
     this.__dirty = this.children && !!this.children.length;
-	this.BackgroundColor = new LIB.Color([255,255,255]);
+	this.BackgroundColor = new LIB.Color([255,255,255,255]);
 	this.PaintColor = new LIB.Color(0,0,0);
 	this.addMethod( "Clear", function(){
 		this.dom.height = this.Height;
 		this.dom.width = this.Width;
 		var oldFill = ctx.fillStyle;
-		ctx.fillStyle = this.clearColor;
-		ctx.fillRect(0,0,this.Width, this.Height);
-		ctx.fillStyle = oldFill;
-		ctx.beginPath();
+		if( this.__image )
+		{
+			ctx.drawImage(this.__image, 0,0,this.Width, this.Height);
+		}
+		else
+		{
+			ctx.fillStyle = this.clearColor;
+			ctx.fillRect(0,0,this.Width, this.Height);
+			ctx.fillStyle = oldFill;
+		}
+		// ctx.beginPath();
 	});
 
 	var polygonMode = false;
@@ -169,6 +182,20 @@ defineComponent("Canvas", "ComponentContainer", function Canvas( ui )
 		__dirtyCanvases.push(this);
 		if( __dirtyCanvases.length == 1 )
 			requestAnimationFrame(__redrawCanvases);
+	},
+	set$BackgroundImage:function(name){
+		if( name == this.__properties.BackgroundImage ) return;
+		this.__properties.BackgroundImage = name;
+		var THIS = this;
+		LIB.getFileBinary("assets/" + name, function(data){
+			if( THIS.__properties.BackgroundImage != name ) return;
+			var ext = name.match(/\.([a-zA-Z]+)$/) || [0, "png"];
+			ext = ext[1];
+			var fmt = "data:image/"+ext+";base64,"
+			THIS.__image = new Image();
+			THIS.__image.src = fmt + btoa(data);
+		});
+		return name;
 	},
 	set$BackgroundColor:function(c){
 		var str;

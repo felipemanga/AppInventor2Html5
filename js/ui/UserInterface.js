@@ -5,6 +5,7 @@ defineComponent("Button", "Component", function( ui ){
 defineComponent("TextBox", "Component", function( ui ){
 	this.SUPER(ui, ui.MultiLine=="True"?"textarea":"input");
 }, {
+	get$Width:150,
 	onchange:function(com){
 		if( com.ui.NumbersOnly )
 			com.dom.value = com.dom.value.replace(/[^0-9.]+/g, "");
@@ -24,6 +25,10 @@ defineComponent("TextBox", "Component", function( ui ){
 		this.set$Text.SUPER.call(this, t);
 		this.dom.value = this.Text;
 	}
+});
+
+defineComponent("ListPicker", "Component", function( ui ){
+	this.SUPER(ui, "button");
 });
 
 defineComponent("ListView", "Component", function( ui ){
@@ -69,7 +74,7 @@ defineComponent("ListView", "Component", function( ui ){
 defineComponent("Label", "Component", function( ui ){
 	this.SUPER(ui, "div");
 },{
-	get$HasMargins:true
+	get$HasMargins:false
 });
 
 defineComponent("PasswordTextBox", "TextBox", function( ui ){
