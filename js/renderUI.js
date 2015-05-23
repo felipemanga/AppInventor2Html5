@@ -144,8 +144,17 @@ function handler(name, com, evt)
 		evt.preventDefault();
 	if( !com.Enabled ) return;
 	var c = com.screen[com.$Name + "_" + name];
-	if( name == "TouchDown" ) com.dom.__doClick = true;
-	if( name == "Drag" ) com.dom.__doClick = false;
+	if( name == "TouchDown" )
+	{
+		com.dom.__doClick = true;
+		com.dom.mouseX = evt.x;
+		com.dom.mouseY = evt.y;
+	}
+	if( name == "Drag" ) 
+	{
+		if( evt.x != com.dom.mouseX || evt.y != com.dom.mouseY )
+			com.dom.__doClick = false;
+	}
 	if( c ) c();
 	if( name == "TouchUp" && com.dom.__doClick ) com.__onclick( com, evt );
 	return false;
