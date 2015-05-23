@@ -136,11 +136,115 @@ defineComponent("Spinner", "Component", function( ui ){
 
 defineComponent("Notifier", "Component", function( ui ){
 	this.SUPER(ui);
+	var THIS=this;
+
+	function popup(title, text, btns, onClick){
+		btns = btns || ["OK"];
+		var buttons = [];
+		for( var i=0; i<btns.length; ++i )
+		{
+			buttons.push(["button", {
+				style:{margin:"5px"}, 
+				text:btns[i], 
+				onclick:onClick
+			}]);
+		}
+
+		return DOC.create("div", {
+			style:{
+				position:"absolute", 
+				top:0, 
+				left:0, 
+				width:"100%", 
+				height:"100%", 
+				backgroundColor:"rgba(0,0,0,0.3)",
+				display:"flex",
+				alignItems:"center"
+			},
+			children:[
+				["div", {style:{width:"100%"}}],
+				["div",{
+					style:{width:"100%", backgroundColor:"#EEE"},
+					children:[
+						["div",{
+							text:title,
+							style:{
+								backgroundColor:"#DDD",
+								fontSize:"16px",
+								fontWeight:"bold",
+								padding:"5px"
+								},
+							display:"block"
+						}],
+						["div",{
+							style:{ margin:"10px" },
+							text:text
+						}],
+						["div",{
+							style:{
+								textAlign:"right"
+							},
+							children:buttons
+						}]
+					]
+				}],
+				["div", {style:{width:"100%"}}],
+			]
+		}, document.body);
+	}
+
+	this.__notification = {
+		alert:function(title, msg, btn){
+			var p = popup(title||AIA.properties.name, msg, btn||["OK"], function(){
+				DOC.remove(p);
+			});
+			return p;
+		},
+		confirm:function(msg, cb, title, btns){
+			var p = popup(title, msg, btns, function(e){
+				DOC.remove(p);
+				var v = THIS.screen[THIS.$Name + "_AfterChoosing" ];
+				if( v ) v( e.target.textContent );
+			});
+			return p;
+		}
+	};
 },{
-	
+	ShowAlert:function(msg){
+		this.__notification.alert(null, msg);
+	},
+	LogError:function(msg){
+		console.error(msg);
+	},
+	LogInfo:function(msg){
+		console.log(msg);
+	},
+	LogWarning:function(msg){
+		console.warn(msg);
+	},
+	ShowChooseDialog:function(msg, title, btn1, btn2, cancel){
+		var THIS=this;
+		var btns = [btn1, btn2];
+		if( cancel && (""+cancel).toLowerCase() != "false" ) btns.push("Cancel");
+		this.__notification.confirm(msg, function(v){
+			var c = THIS.screen[THIS.$Name + "_AfterChoosing"];
+			if( c ) c(v)
+		}, title, btns);
+	},
+	ShowMessageDialog:function(msg, title, btn)
+	{
+		this.__notification.alert(title, msg, [btn]);
+	},
+	ShowProgressDialog:function(msg, title){
+		this.__progressDialog = this.__notification.alert(title||"Please wait", msg||"Please wait", []);
+	},
+	DismissProgressDialog:function(){
+		DOC.remove(this.__progressDialog);
+		this.__progressDialog = null;
+	}
 },{
 	plugins:{
-		"org.apache.cordova.media":1,
-		"org.apache.cordova.device":1
+		'org.apache.cordova.dialogs':1,
+		'org.apache.cordova.vibration':1
 	}
 });

@@ -572,8 +572,11 @@ var DOC = {
 			parent.insertBefore(el, before);
 		}			
 		
-		for( var k=0, v; v=children[k]; ++k )
+		for( var k=0, v; k<children.length; ++k )
 		{
+			v=children[k];
+			if( v === undefined ) continue;
+
 			type = UTIL.typeOf(v, Element);
 			switch( type ){
 			case "Element": break;
@@ -610,6 +613,11 @@ var DOC = {
 			DOC.index( c, obj );
 		}
 		return obj;
+	},
+
+	remove:function(e){
+		if( !e || !e.parentNode ) return;
+		e.parentNode.removeChild(e);
 	},
 	
 	removeChildren:function(e)
