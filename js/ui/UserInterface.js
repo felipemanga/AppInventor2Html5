@@ -30,8 +30,20 @@ defineComponent("TextBox", "Component", function( ui ){
 	}
 });
 
-defineComponent("ListPicker", "Component", function( ui ){
+defineComponent("ListPicker", "Component", function(ui){
 	this.SUPER(ui, "button");
+},{
+	get$BackgroundColor:"&HFF000000",
+	get$TextSize:function(){ return this.FontSize; },
+	set$TextSize:function(s){ return this.FontSize = s; },
+	get$TextColor:"&HFFFFFFFF",
+	get$Elements:[],
+	set$Elements:function(e){
+		this.__properties.Elements = e;
+	},
+	set$ElementsFromString:function(e){
+		this.Elements = e.split(",");
+	}
 });
 
 defineComponent("ListView", "Component", function( ui ){
@@ -128,7 +140,7 @@ defineComponent("Notifier", "Component", function( ui ){
 	
 },{
 	plugins:{
-		"org.apache.cordova.media":1
+		"org.apache.cordova.media":1,
 		"org.apache.cordova.device":1
 	}
-})
+});

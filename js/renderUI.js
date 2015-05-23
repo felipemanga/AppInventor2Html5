@@ -74,7 +74,7 @@ function Component( ui, el, desc )
 				{
 					nk = {mousedown:"touchstart", mouseup:"touchend", mousemove:"touchmove", click:1}[nk] || nk;
 					if( nk == 1 ) continue;
-				}				
+				}
 				this.dom.addEventListener( nk, func );
 			}
 		}
@@ -139,15 +139,15 @@ function Component( ui, el, desc )
 
 function handler(name, com, evt)
 {
-	if( evt.target.tagName != "INPUT" && onPhone ) 
+	// console.log(com.$Name + "_" + name, evt.type);
+	if( !{"INPUT":1,"BUTTON":1}[evt.target.tagName] && onPhone ) 
 		evt.preventDefault();
 	if( !com.Enabled ) return;
 	var c = com.screen[com.$Name + "_" + name];
-	if( evt.type != "mousemove" ) console.log(com.$Name + "_" + name, evt.type);
-	if( c ) c();
 	if( name == "TouchDown" ) com.dom.__doClick = true;
 	if( name == "Drag" ) com.dom.__doClick = false;
-	if( name == "TouchUp" && com.dom.__doClick && onPhone && com.onclick ) com.onclick( com, evt );
+	if( c ) c();
+	if( name == "TouchUp" && com.dom.__doClick ) com.__onclick( com, evt );
 	return false;
 }
 
@@ -313,7 +313,7 @@ prepare(Component, null, {
 	RequestFocus:function(){
 		this.dom.focus();
 	},
-    onclick:handler.bind(null, "Click"),
+    __onclick:handler.bind(null, "Click"),
     ondblclick:handler.bind(null, "LongClick"),
     onfocus:handler.bind(null, "GotFocus"),
     onblur:handler.bind(null, "LostFocus"),
