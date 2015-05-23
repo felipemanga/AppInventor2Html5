@@ -172,6 +172,9 @@ AIA.exportZip = function(){
 	var includes = [];
 	var styles = [];
 	var aiainfo = "";
+	var plugins = {};
+	var components = {};
+	
 	for( var i=0; i<document.head.children.length; ++i )
 	{
 		var tag = document.head.children[i];
@@ -188,7 +191,6 @@ AIA.exportZip = function(){
 	}
 
 	aiainfo = "AIA.properties = " + JSON.stringify(AIA.properties) + ";\n";
-
 	for( var f in AIA.zip.files )
 	{
 		if( /^assets\/.*$/i.test(f) && AIA.zip.file(f) )
@@ -199,7 +201,20 @@ AIA.exportZip = function(){
 			aiainfo += "AIA.bky['" + f + "'] = function($SCREEN){\n" + AIA.parseBKY(f) + "\n};\n";
 		}else if( /^src\/.*\.scm$/i.test(f) )
 		{
-			aiainfo += "AIA.scm['" + f + "'] = " + JSON.stringify(AIA.parseSCM(f)) + ";\n";
+			var scm = AIA.parseSCM(f);
+			aiainfo += "AIA.scm['" + f + "'] = " + JSON.stringify(scm) + ";\n";
+			function iter(ui){
+				components[ui.$Type] = ui.$Type;
+				var c = getComponentClass(ui)
+				if( ui.$Components )
+				{
+					for( var k in ui.$Components )
+						iter(ui.$Components[k]);
+				}
+				if( c && c.plugins )
+					UTIL.mergeTo(plugins, c.plugins);
+			}
+			iter(scm.Properties);
 		}
 	}
 

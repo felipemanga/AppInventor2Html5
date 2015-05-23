@@ -27,14 +27,14 @@ var onPhone = document.location.href.toLowerCase().indexOf("file:") == 0;
 
 var components = {};
 
-window.defineComponent = function(name, base, func, obj)
+window.defineComponent = function(name, base, func, obj, statics)
 {
 	components[name] = func;
 	base = {"Component":Component, "ComponentContainer":ComponentContainer}[base] || components[base] || base;
-	prepare( func, base, obj );
+	prepare( func, base, obj, statics );
 };
 
-function prepare(func, base, obj){
+function prepare(func, base, obj, statics){
 	var ret={};
 	for( var k in obj )
 	{
@@ -48,6 +48,7 @@ function prepare(func, base, obj){
 		func.prototype.constructor = base;
 	}else func.prototype = obj;
 	components[func.name] = func;
+	UTIL.mergeTo( func, statics );
 	return ret;
 }
 
@@ -73,7 +74,7 @@ function Component( ui, el, desc )
 				{
 					nk = {mousedown:"touchstart", mouseup:"touchend", mousemove:"touchmove", click:1}[nk] || nk;
 					if( nk == 1 ) continue;
-				}				
+				}
 				this.dom.addEventListener( nk, func );
 			}
 		}
@@ -138,15 +139,15 @@ function Component( ui, el, desc )
 
 function handler(name, com, evt)
 {
-	if( evt.target.tagName != "INPUT" && onPhone ) 
+	// console.log(com.$Name + "_" + name, evt.type);
+	if( !{"INPUT":1,"BUTTON":1}[evt.target.tagName] && onPhone ) 
 		evt.preventDefault();
 	if( !com.Enabled ) return;
 	var c = com.screen[com.$Name + "_" + name];
-	if( evt.type != "mousemove" ) console.log(com.$Name + "_" + name, evt.type);
-	if( c ) c();
 	if( name == "TouchDown" ) com.dom.__doClick = true;
 	if( name == "Drag" ) com.dom.__doClick = false;
-	if( name == "TouchUp" && com.dom.__doClick && onPhone && com.onclick ) com.onclick( com, evt );
+	if( c ) c();
+	if( name == "TouchUp" && com.dom.__doClick ) com.__onclick( com, evt );
 	return false;
 }
 
@@ -312,7 +313,7 @@ prepare(Component, null, {
 	RequestFocus:function(){
 		this.dom.focus();
 	},
-    onclick:handler.bind(null, "Click"),
+    __onclick:handler.bind(null, "Click"),
     ondblclick:handler.bind(null, "LongClick"),
     onfocus:handler.bind(null, "GotFocus"),
     onblur:handler.bind(null, "LostFocus"),
@@ -483,7 +484,9 @@ function createComponent( ui )
     return new components[ui.$Type]( ui );
 }
 
-
+window.getComponentClass = function(ui){
+    return components[ui.$Type];
+}
 
 window.renderUI = function( ui )
 {
