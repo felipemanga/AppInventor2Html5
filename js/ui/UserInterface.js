@@ -105,13 +105,20 @@ defineComponent("Image", "Component", function(ui){
 		if( name == this.__properties.Picture ) return;
 		this.__properties.Picture = name;
 		var THIS = this;
-		LIB.getFileBinary("assets/" + name, function(data){
-			if( THIS.__properties.Picture != name ) return;
-			var ext = name.match(/\.([a-zA-Z]+)$/) || [0, "png"];
-			ext = ext[1];
-			var fmt = "data:image/"+ext+";base64,"
-			THIS.dom.src = fmt + btoa(data);
-		});
+		if( name.match(/^https?:\/\//i) )
+		{
+			THIS.dom.src = name;
+		}
+		else
+		{
+			LIB.getFileBinary("assets/" + name, function(data){
+				if( THIS.__properties.Picture != name ) return;
+				var ext = name.match(/\.([a-zA-Z]+)$/) || [0, "png"];
+				ext = ext[1];
+				var fmt = "data:image/"+ext+";base64,"
+				THIS.dom.src = fmt + btoa(data);
+			});
+		}
 		return name;
 	},
 	onload:function(com){

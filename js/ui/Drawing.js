@@ -17,10 +17,15 @@ function __redrawCanvases(){
 		for( var j=0, child; child=sorted[j]; ++j )
 		{
 			var image = child.__image;
-			if( !image || !image.src || !child.__properties.Visible || !child.__properties.Enabled ) 
+			if( !image || !image.__isLoaded || !child.__properties.Visible || !child.__properties.Enabled ) 
 				continue;
 			var w = child.Width, h = child.Height;
 			if( !w || !h ) continue;
+			if( isNaN(child.X) || isNaN(child.Y) )
+			{
+				console.warn("nan");
+				continue;
+			}
 			c.ctx2d.drawImage(image, child.X, child.Y, w, h);
 		}
 	}
@@ -63,7 +68,7 @@ defineComponent("ImageSprite", "Component", function ImageSprite( ui ){
 		if( file in __SpriteCache )
 		{
 			this.__image = __SpriteCache[file];
-			this.__image.sprites[this.__uid] = this;
+			if( !this.__image.__isLoaded ) this.__image.sprites[this.__uid] = this;
 			if( this.parent ) this.parent.__dirty = true;
 		}
 		else
@@ -71,30 +76,38 @@ defineComponent("ImageSprite", "Component", function ImageSprite( ui ){
 			__SpriteCache[file] = this.__image = new Image();
 			this.__image.sprites = {};
 			this.__image.sprites[this.__uid] = this;
-			LIB.getFileBinary("assets/" + file, function(data){
-				var ext = file.match(/\.([a-zA-Z]+)$/) || [0, "png"];
-				ext = ext[1];
-				var fmt = "data:image/"+ext+";base64,"
-				__SpriteCache[file].addEventListener("load", function(){
+			__SpriteCache[file].addEventListener("load", function(){
 					var img = __SpriteCache[file];
+					img.__isLoaded = true;
 					for( var k in img.sprites )
 					{
 						var com = img.sprites[k];
 						if( !("Height" in com.ui) ) 
-							com.Height = com.__image.height;
+							com.__properties.Height = com.__image.height;
 						if( !("Width" in com.ui) ) 
-							com.Width = com.__image.width;
+							com.__properties.Width = com.__image.width;
 					}
 					if( THIS.parent ) THIS.parent.__dirty = true;
 				});
-				__SpriteCache[file].src = fmt + btoa(data);
-			});
+			if( file.match(/^https?:\/\//i) )
+			{
+				__SpriteCache[file].src = file;
+			}
+			else
+			{
+				LIB.getFileBinary("assets/" + file, function(data){
+					var ext = file.match(/\.([a-zA-Z]+)$/) || [0, "png"];
+					ext = ext[1];
+					var fmt = "data:image/"+ext+";base64,"
+					__SpriteCache[file].src = fmt + btoa(data);
+				});
+			}
 		}
 		
 		if( !("Height" in THIS.ui) ) 
-			THIS.Height = THIS.__image.height;
+			THIS.__properties.Height = THIS.__image.height;
 		if( !("Width" in THIS.ui) ) 
-			THIS.Width = THIS.__image.width;
+			THIS.__properties.Width = THIS.__image.width;
 	}
 });
 

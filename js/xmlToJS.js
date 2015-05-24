@@ -383,7 +383,7 @@ function xmlToJS( xml )
             ctx[item] = usid;
             var ret = "\tvar " + local("__list", ctxId) + " = " + iterate( index.$name.LIST, true ) + ";\n";
             stack.push( ctx );
-            ret += "\tfor( var " + local("__counter", ctxId) + " = 0; " + local("__counter", ctxId) + " < " + local("__list", ctxId) + ".length; ++" + local("__counter", ctxId) + " ){\n";
+            ret += "\tfor( var " + local("__counter", ctxId) + " = 0; " + local("__list", ctxId) + " && " + local("__counter", ctxId) + " < " + local("__list", ctxId) + ".length; ++" + local("__counter", ctxId) + " ){\n";
             ret += "\t" + local(item, ctxId) + " = " + local("__list", ctxId) + "[ " + local("__counter", ctxId) + " ];\n";
             ret += iterate( index.statement[0] );
             ret += "\t}\n";
