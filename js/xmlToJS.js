@@ -45,7 +45,7 @@ function xmlToJS( xml )
         return ret;
     }
 
-    function translate(cxml, index)
+    function translate(cxml, index, isRHS)
     {
         var type = cxml.getAttribute("type") || cxml.tagName;
 		if( cxml.getAttribute("disabled") == "true" )
@@ -56,7 +56,7 @@ function xmlToJS( xml )
         else
         { 
             try{
-                ret = ctor( cxml, index );
+                ret = ctor( cxml, index, isRHS );
             }catch(e){
                 ret = "";
                 console.error( "Error translating block! ", cxml, e.stack );
@@ -70,16 +70,16 @@ function xmlToJS( xml )
         return ret;
     }
 
-    function iterate(p){
+    function iterate(p, isRHS){
         var src = "";
 		for( var cid=0; cid<p.childNodes.length; ++cid )
 		{
 			var cxml = p.childNodes[cid];
 			if( cxml.nodeType == cxml.TEXT_NODE ) continue;
 			var ic = indexChildren(cxml);
-			src += translate(cxml, ic);
+			src += translate(cxml, ic, isRHS);
 			if( ic.next ) 
-				src += iterate( ic.next[0] );
+				src += iterate( ic.next[0], isRHS );
 		}
         return src;
     }
@@ -90,7 +90,7 @@ function xmlToJS( xml )
         var args = [];
         if( index.value )
             for( var i=0; i<index.value.length; ++i )
-                args.push( iterate( index.value[i] ) );
+                args.push( iterate( index.value[i], true ) );
 
         var ret = "LIB" + deref( xml.getAttribute("type") ) + "( " + args.join(", ") + " )";
         if( terminate ) ret = "\t" + ret + ";\n";
@@ -105,7 +105,7 @@ function xmlToJS( xml )
         {
             console.error(f);
         }
-        var param = "(" + iterate(index.$name.NUM) + ")";
+        var param = "(" + iterate(index.$name.NUM, true) + ")";
         if( f == "sin" || f == "cos" || f == "tan" )
             param = "(" + param + " / 180 * 3.14159265 )";
         return "Math." + f + param;
@@ -124,7 +124,7 @@ function xmlToJS( xml )
         }
         if( index.value )
             for( var i=0; i<index.value.length; ++i )
-                args.push( iterate( index.value[i] ) );
+                args.push( iterate( index.value[i], true ) );
         var cast = " ";
         if( op == "+" ) cast=" Number";
         return cast + "(" + args.join(") " + op + cast + "(") + ")";
@@ -181,11 +181,11 @@ function xmlToJS( xml )
             else 
                 ret += iterate( index.$name.COMPONENT );
             ret += deref( index.$name.PROP.textContent );
-            if( sog == "set" ) ret = "\t" + ret + " = " + iterate(index.$name.VALUE) + ";\n";
+            if( sog == "set" ) ret = "\t" + ret + " = " + iterate(index.$name.VALUE, true) + ";\n";
             return ret;
         },
 
-        component_method: function( xml, index )
+        component_method: function( xml, index, isRHS )
         {
             if( !isInFunc ) return "";
             var funcName = index.mutation[0].getAttribute("method_name");
@@ -202,7 +202,7 @@ function xmlToJS( xml )
                 src += iterate( index.$name["ARG" + argNum] );
             }
             src += " )";
-            if( index.next )
+            if( !isRHS )
                 src = "\t" + src + ";\n";
             return src;
         },
@@ -286,7 +286,7 @@ function xmlToJS( xml )
             src += ' ){\n';
             stack.push(ctx);
             isInFunc = true;
-            src += "\treturn " + iterate( index.value[0] ) + ";\n";
+            src += "\treturn " + iterate( index.value[0], true ) + ";\n";
             isInFunc = false;
             stack.pop();
             src +='};\n\n';
@@ -298,7 +298,7 @@ function xmlToJS( xml )
             var ret = "var $global_" + safeName(index.$name.NAME.textContent);
             isInFunc = true;
             if( index.$name.VALUE )
-                ret += " = " + iterate(index.$name.VALUE) + ";\n";
+                ret += " = " + iterate(index.$name.VALUE, true) + ";\n";
             else
                 ret += ";\n";
             isInFunc = false;
@@ -320,49 +320,50 @@ function xmlToJS( xml )
         {
             if( !isInFunc ) return "";
             var params = "";
-            if( index.$name.SCREEN ) params = iterate( index.$name.SCREEN );
+            if( index.$name.SCREEN ) params = iterate( index.$name.SCREEN, true );
             return "\twindow.closeScreen(" + params + ");\n";
         },
 
         controls_openAnotherScreen: function( xml, index )
         {
             if( !isInFunc ) return "";
-            return "\twindow.openAnotherScreen( " + iterate( index.$name.SCREEN ) + ");\n";
+            return "\twindow.openAnotherScreen( " + iterate( index.$name.SCREEN, true ) + ");\n";
         },
         
         controls_openAnotherScreenWithStartValue: function( xml, index )
         {
             if( !isInFunc ) return "";
-            return "\twindow.openAnotherScreen( " + iterate( index.$name.SCREENNAME ) + ", " + iterate( index.$name.STARTVALUE ) + ");\n";
+            return "\twindow.openAnotherScreen( " + iterate( index.$name.SCREENNAME, true ) + ", " + iterate( index.$name.STARTVALUE, true ) + ");\n";
         },
 
         controls_do_then_return: function( xml, index )
         {
             if( !isInFunc ) return "";
-            return "(function(){" + iterate( index.statement[0] ) + "\treturn " + iterate( index.value[0] ) + ";\n}).apply(this)";
+            return "(function(){" + iterate( index.statement[0] ) + "\treturn " + iterate( index.value[0], true ) + ";\n}).apply(this)";
         },
 
         controls_eval_but_ignore:function(xml, index){
             if( !isInFunc ) return "";
-            return "\t" + iterate(index.$name.VALUE) + ";\n";
+            return "\t" + iterate(index.$name.VALUE, true) + ";\n";
         },
 
         controls_choose:function(xml, index){
             if( !isInFunc ) return "";
-            return "((" + (iterate(index.$name.TEST)||"false") 
-                + ") ? (" + (iterate(index.$name.THENRETURN)||"''") 
-                + ") : (" + (iterate(index.$name.ELSERETURN)||"''") + "))";
+            return "((" + (iterate(index.$name.TEST, true)||"false") 
+                + ") ? (" + (iterate(index.$name.THENRETURN, true)||"''") 
+                + ") : (" + (iterate(index.$name.ELSERETURN, true)||"''") + "))";
         },
 
         controls_if: function( xml, index )
         {
             if( !isInFunc ) return "";
-            var ret = "\tif(" + iterate( index.value[0] ) + " ){\n";
+            var ret = "\tif(" + iterate( index.value[0], true ) + " ){\n";
             ret += iterate( index.statement[0] );
             for( var i=1; i<index.value.length; ++i )
             {
-                ret += "\t}else if(" + iterate( index.value[i] ) + " ){\n";
-                ret += iterate( index.statement[i] );
+                ret += "\t}else if(" + iterate( index.$name["IF"+i], true ) + " ){\n";
+                var statement = index.$name["DO"+i];
+                if( statement ) ret += iterate( statement );
             }
             if( index.$name.ELSE )
             {
@@ -380,7 +381,7 @@ function xmlToJS( xml )
             var item = safeName(index.$name.VAR.textContent);
             var ctx = {};
             ctx[item] = usid;
-            var ret = "\tvar " + local("__list", ctxId) + " = " + iterate( index.$name.LIST ) + ";\n";
+            var ret = "\tvar " + local("__list", ctxId) + " = " + iterate( index.$name.LIST, true ) + ";\n";
             stack.push( ctx );
             ret += "\tfor( var " + local("__counter", ctxId) + " = 0; " + local("__counter", ctxId) + " < " + local("__list", ctxId) + ".length; ++" + local("__counter", ctxId) + " ){\n";
             ret += "\t" + local(item, ctxId) + " = " + local("__list", ctxId) + "[ " + local("__counter", ctxId) + " ];\n";
@@ -399,8 +400,8 @@ function xmlToJS( xml )
             ctx[counter] = usid;
             stack.push( ctx );
 
-            var ret = "\tvar " + local("STEP", ctxId) + " = " + iterate(index.$name.STEP) + ";\n";
-            ret += "\tvar " + local("START", ctxId) + " = " + local(counter, ctxId) + " = " + iterate(index.$name.START) + ";\n";
+            var ret = "\tvar " + local("STEP", ctxId) + " = " + iterate(index.$name.STEP, true) + ";\n";
+            ret += "\tvar " + local("START", ctxId) + " = " + local(counter, ctxId) + " = " + iterate(index.$name.START, true) + ";\n";
             ret += "\tvar " + local("END", ctxId) + " = " + iterate(index.$name.END) + ";\n";
             ret += "\tif(";
             ret +=      "(" + local("STEP", ctxId) + " > 0 && " + local(counter, ctxId) + " < " + local("END", ctxId) + ") || ";
@@ -420,7 +421,7 @@ function xmlToJS( xml )
         controls_while: function( xml, index )
         {
             if( !isInFunc ) return "";
-            var ret = "\twhile(" + iterate( index.value[0] ) + " ){\n";
+            var ret = "\twhile(" + iterate( index.value[0], true ) + " ){\n";
             ret += iterate( index.statement[0] );
             ret += "\t}\n";
             return ret;
@@ -438,13 +439,13 @@ function xmlToJS( xml )
                 ret += '\tvar _' + usid + safeName(name)
                 if( index.$name["DECL" + i] ){
                     ret += " = ";
-                    ret += iterate(index.$name["DECL" + i]);
+                    ret += iterate(index.$name["DECL" + i], true);
                 }
                 ret += ";\n";
                 ctx[name] = usid;
             }
             stack.push( ctx );
-            ret += iterate( index.statement[0] );
+            ret += iterate( index.statement[0], false );
             stack.pop();
             return ret;
         },
@@ -461,13 +462,13 @@ function xmlToJS( xml )
                 ret += '\tvar _' + usid + safeName(name);
                 if( index.$name["DECL" + i] ){
                     ret += " = ";
-                    ret += iterate(index.$name["DECL" + i]);
+                    ret += iterate(index.$name["DECL" + i], true);
                 }
                 ret += ";\n";
                 ctx[name] = usid;
             }
             stack.push( ctx );
-            ret += "return " + iterate(index.$name.RETURN) + ";\n}).apply(this)";
+            ret += "return " + iterate(index.$name.RETURN, true) + ";\n}).apply(this)";
             stack.pop();
             return ret;
         },
@@ -493,7 +494,7 @@ function xmlToJS( xml )
                 if( prefix ) prefix = "_" + prefix;
                 else{ ctx = "ctx."; prefix = ""; }
             }
-            return "\t" + ctx + prefix + safeName(name) + " = " + iterate( index.value[0] ) + ";\n";
+            return "\t" + ctx + prefix + safeName(name) + " = " + iterate( index.value[0], true ) + ";\n";
         },
 
         lexical_variable_get:function( xml, index )
@@ -521,17 +522,22 @@ function xmlToJS( xml )
             return "'" + index.$name.TEXT.textContent.replace(/'/g, "\\'") + "'";
         },
 
+        text_replace_all:function(xml, index){
+            if( !isInFunc ) return "";
+            return "(''+" + iterate(index.$name.TEXT, true) + ").split(" + iterate(index.$name.SEGMENT, true) + ").join(" + iterate(index.$name.REPLACEMENT) + ")";
+        },
+
         text_split:function( xml, index )
         {
             if( !isInFunc ) return "";
-            return iterate(index.$name.TEXT) + ".split(" + iterate(index.$name.AT) + ")";
+            return iterate(index.$name.TEXT, true) + ".split(" + iterate(index.$name.AT, true) + ")";
         },
 
         text_changeCase:function( xml, index )
         {
             if( !isInFunc || !index.$name.TEXT ) return "";
-            if( index.$name.OP.textContent == "DOWNCASE" ) return "(''+" + iterate(index.$name.TEXT) + ").toLowerCase()";
-            if( index.$name.OP.textContent == "UPCASE" ) return "(''+" + iterate(index.$name.TEXT) + ").toUpperCase()";
+            if( index.$name.OP.textContent == "DOWNCASE" ) return "(''+" + iterate(index.$name.TEXT, true) + ").toLowerCase()";
+            if( index.$name.OP.textContent == "UPCASE" ) return "(''+" + iterate(index.$name.TEXT, true) + ").toUpperCase()";
             console.error(xml);
             return "ERROR"
         },
@@ -551,19 +557,19 @@ function xmlToJS( xml )
         logic_negate:function( xml, index )
         {
             if( !isInFunc ) return "";
-            return "!(" + iterate(index.$name.BOOL) + ")";
+            return "!(" + iterate(index.$name.BOOL, true) + ")";
         },
         
         math_neg:function( xml, index )
         {
             if( !isInFunc ) return "";
-            return "-(" + iterate(index.$name.NUM) + ")";
+            return "-(" + iterate(index.$name.NUM, true) + ")";
         },
 
         math_single:function( xml, index )
         {
             if( !isInFunc ) return "";
-            return {NEG:"-"}[index.$name.OP.textContent] + "(" + iterate(index.$name.NUM) + ")";
+            return {NEG:"-", FLOOR:"Math.floor"}[index.$name.OP.textContent] + "(" + iterate(index.$name.NUM, true) + ")";
         },
         
         math_number:function( xml, index )
@@ -577,10 +583,16 @@ function xmlToJS( xml )
         math_cos:math,
         math_abs:math,
         math_round:math,
+        math_floor:math,
+
+        lists_insert_item:function(xml, index){
+            if( !isInFunc ) return "";
+            return "\t" + iterate(index.$name.LIST, true) + ".splice(" + iterate(index.$name.INDEX, true) + ",0," + iterate(index.$name.ITEM, true) + ");\n";
+        },
 
         lists_copy:function(xml, index){
             if( !isInFunc ) return "";
-            return "JSON.parse( JSON.stringify( " + iterate(index.$name.LIST) + " ) )"
+            return "JSON.parse( JSON.stringify( " + iterate(index.$name.LIST, true) + " ) )"
         },
 
         lists_create_with: function( xml, index ){
@@ -588,7 +600,7 @@ function xmlToJS( xml )
             var args = [];
             if( index.value )
                 for( var i=0; i<index.value.length; ++i )
-                    args.push( iterate( index.value[i] ) );
+                    args.push( iterate( index.value[i], true ) );
 
             return "[" + args.join(", ") + "]";
         },
@@ -598,11 +610,11 @@ function xmlToJS( xml )
         
         lists_add_items: function( xml, index ){
             if( !isInFunc ) return "";
-            var ret = "\t" + iterate( index.$name.LIST ) + ".push( ";
+            var ret = "\t" + iterate( index.$name.LIST, true ) + ".push( ";
             var args = [];
             if( index.value )
                 for( var i=1; i<index.value.length; ++i )
-                    args.push( iterate( index.value[i] ) );
+                    args.push( iterate( index.value[i], true ) );
 
             ret += args.join(", ") + " );\n";
             return ret;
@@ -612,50 +624,50 @@ function xmlToJS( xml )
             var args = ["''"];
             if( index.value )
                 for( var i=0; i<index.value.length; ++i )
-                    args.push( iterate( index.value[i] ) );
+                    args.push( iterate( index.value[i], true ) );
 
             return "(" + args.join(") + (") + ")";
         },        
         lists_position_in: function( xml, index ){
             if( !isInFunc ) return "";
-            return "(" + iterate(index.$name.LIST) + ".indexOf(" + iterate(index.$name.ITEM) + ")+1)";
+            return "(" + iterate(index.$name.LIST, true) + ".indexOf(" + iterate(index.$name.ITEM, true) + ")+1)";
         },
         color_make_color: function( xml, index ){
             if( !isInFunc ) return "";
-            return "new LIB.Color(" + iterate( index.$name.COLORLIST ) + " )";
+            return "new LIB.Color(" + iterate( index.$name.COLORLIST, true ) + " )";
         },
         lists_length: function( xml, index ){
             if( !isInFunc ) return "";
-            return iterate( index.$name.LIST ) + ".length";
+            return iterate( index.$name.LIST, true ) + ".length";
         },
         lists_is_empty: function( xml, index ){
             if( !isInFunc ) return "";
-            return "(" + iterate( index.$name.LIST ) + ".length == 0)";
+            return "(" + iterate( index.$name.LIST, true ) + ".length == 0)";
         },
         lists_select_item: function( xml, index )
         {
             if( !isInFunc ) return "";
-            return iterate( index.$name.LIST ) + "[(" + iterate( index.$name.NUM ) + ")-1]";
+            return iterate( index.$name.LIST, true ) + "[(" + iterate( index.$name.NUM, true ) + ")-1]";
         },
         lists_remove_item: function( xml, index )
         {
             if( !isInFunc ) return "";
-            return "\t" + iterate( index.$name.LIST ) + ".splice(" + iterate( index.$name.INDEX ) + "-1 , 1 );\n";
+            return "\t" + iterate( index.$name.LIST, true ) + ".splice(" + iterate( index.$name.INDEX, true ) + "-1 , 1 );\n";
         },
         lists_replace_item: function( xml, index )
         {
             if( !isInFunc ) return "";
-            return "\t" + iterate( index.$name.LIST ) + "[(" + iterate( index.$name.NUM ) + ")-1] = " + iterate( index.$name.ITEM ) + ";\n";
+            return "\t" + iterate( index.$name.LIST, true ) + "[(" + iterate( index.$name.NUM, true ) + ")-1] = " + iterate( index.$name.ITEM, true ) + ";\n";
         },
 
         math_random_int: function( xml, index ){
             if( !isInFunc ) return "";
-            return "LIB.random(" + iterate(index.$name.FROM) + ", " + iterate(index.$name.TO) + ")";
+            return "LIB.random(" + iterate(index.$name.FROM, true) + ", " + iterate(index.$name.TO, true) + ")";
             if( !isInFunc ) return "";
         },
         math_is_a_number: function( xml, index ){
             if( !isInFunc ) return "";
-            return "!isNaN(parseFloat(" + iterate(index.$name.NUM) + "))";
+            return "!isNaN(parseFloat(" + iterate(index.$name.NUM, true) + "))";
         },
 
         math_subtract: mathOp.bind(this, "-"),
@@ -673,5 +685,5 @@ function xmlToJS( xml )
 
     var ret = iterate(xml.childNodes[0]);
     // console.log(ret);
-    return "(function($SCREEN){var $COM = $SCREEN.components;\n" + ret + "}).call($SCREEN, $SCREEN)";
+    return "(function($SCREEN){\n\tvar $COM = $SCREEN.components;\n" + ret + "}).call($SCREEN, $SCREEN)";
 }
