@@ -659,6 +659,11 @@ function xmlToJS( xml )
             if( !isInFunc ) return "";
             return "\t" + iterate( index.$name.LIST, true ) + "[(" + iterate( index.$name.NUM, true ) + ")-1] = " + iterate( index.$name.ITEM, true ) + ";\n";
         },
+        lists_append_list:function( xml, index )
+        {
+            if( !isInFunc ) return "";
+            return "\tArray.prototype.push.apply(" + iterate( index.$name.LIST0, true ) +", " + iterate( index.$name.LIST1, true ) + ");\n";
+        },
 
         math_random_int: function( xml, index ){
             if( !isInFunc ) return "";
@@ -668,6 +673,14 @@ function xmlToJS( xml )
         math_is_a_number: function( xml, index ){
             if( !isInFunc ) return "";
             return "!isNaN(parseFloat(" + iterate(index.$name.NUM, true) + "))";
+        },
+        math_on_list:function( xml, index ){
+            if( !isInFunc ) return "";
+            var args = [];
+            if( index.value )
+                for( var i=0; i<index.value.length; ++i )
+                    args.push( iterate( index.value[i], true ) );
+            return "Math." + index.$name.OP.textContent.toLowerCase() + "(" + args.join(", ") + ")";
         },
 
         math_subtract: mathOp.bind(this, "-"),

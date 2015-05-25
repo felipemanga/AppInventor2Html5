@@ -76,6 +76,7 @@ defineComponent("ImageSprite", "Component", function ImageSprite( ui ){
 			__SpriteCache[file] = this.__image = new Image();
 			this.__image.sprites = {};
 			this.__image.sprites[this.__uid] = this;
+			console.log("Loading sprite", file);
 			__SpriteCache[file].addEventListener("load", function(){
 					var img = __SpriteCache[file];
 					img.__isLoaded = true;
