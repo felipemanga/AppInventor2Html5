@@ -286,7 +286,7 @@ function xmlToJS( xml )
             src += ' ){\n';
             stack.push(ctx);
             isInFunc = true;
-            src += "\treturn " + iterate( index.value[0], true ) + ";\n";
+            if( index.value ) src += "\treturn " + iterate( index.value[0], true ) + ";\n";
             isInFunc = false;
             stack.pop();
             src +='};\n\n';

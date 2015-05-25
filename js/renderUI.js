@@ -155,7 +155,7 @@ function handler(name, com, evt)
 		if( evt.x != com.dom.mouseX || evt.y != com.dom.mouseY )
 			com.dom.__doClick = false;
 	}
-	if( c ) c();
+	if( c ) c({x:evt.x, y:evt.y});
 	if( name == "TouchUp" && com.dom.__doClick ) com.__onclick( com, evt );
 	return false;
 }
