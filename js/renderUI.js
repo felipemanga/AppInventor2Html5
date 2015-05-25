@@ -436,8 +436,8 @@ $resize:function(w, h){
 		var acc=0;
 		if( isVert )
 		{
-			if( this.AlignVertical == 3 ) acc += h/2 - knownHeight/2;
-			else if( this.AlignVertical == 2 ) acc += h - knownHeight;
+			if( this.AlignVertical == 2 ) acc += h/2 - knownHeight/2;
+			else if( this.AlignVertical == 3 ) acc += h - knownHeight;
 		}
 		else
 		{

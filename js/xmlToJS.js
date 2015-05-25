@@ -357,11 +357,12 @@ function xmlToJS( xml )
         controls_if: function( xml, index )
         {
             if( !isInFunc ) return "";
-            var ret = "\tif(" + iterate( index.value[0], true ) + " ){\n";
-            ret += iterate( index.statement[0] );
-            for( var i=1; i<index.value.length; ++i )
+            var ret = "";
+            for( var i=0; i<index.value.length; ++i )
             {
-                ret += "\t}else if(" + iterate( index.$name["IF"+i], true ) + " ){\n";
+                if( ret ) ret += "\t}else ";
+                else ret += "\t";
+                ret += "if(" + iterate( index.$name["IF"+i], true ) + " ){\n";
                 var statement = index.$name["DO"+i];
                 if( statement ) ret += iterate( statement );
             }
@@ -692,6 +693,7 @@ function xmlToJS( xml )
         math_compare:  mathOp.bind(this, null),
         logic_compare:  mathOp.bind(this, null),
         logic_operation:  mathOp.bind(this, null),
+        logic_or:  mathOp.bind(this, null),
 
         yacodeblocks:function(){return ""}
     };
