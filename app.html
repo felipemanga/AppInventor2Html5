@@ -133,11 +133,21 @@ overflow: hidden;
 </head>
 <body>
 	<div id="dropZone" style="position: absolute; width: calc(100% - 40px); box-sizing: border-box; width: calc(100% - 40px); top: 0; margin: 20px; display: none;">
-	<div id="dropZoneRun" style="margin: 0px 20px 20px 20px; font: 42px sans-serif; text-align: center; color: #333; background-color: #EEE; padding: 50px; border-style: dashed;">
-		<div>Run an AIA by dragging-and-dropping it here.</div>
-	</div>
-	<div id="dropZoneSave" style="margin: 0px 20px 20px 20px; font: 42px sans-serif; text-align: center; color: #333; background-color: #EEE; padding: 50px; border-style: dashed;">
-		<div>Translate an AIA to HTML5 by dragging-and-dropping it here.</div>
+		<div id="demos">
+			<div style="float: left; height: 70px; margin: 0px 20px 20px 20px; font: 24px sans-serif; text-align: center; color: #333; background-color: #EEE; padding: 20px; border-style: dashed;">
+				<a href="#" onclick='AIA.load("ai3d.aia", null, "start");'>Canvas 3D<br/>Demo</a>
+			</div>
+			<div style="float: left; height: 70px; margin: 0px 20px 20px 20px; font: 24px sans-serif; text-align: center; color: #333; background-color: #EEE; padding: 20px; border-style: dashed;">
+				<a href="#" onclick='AIA.load("Tiles.aia", null, "start");'>Desert<br/>Minigame</a>
+				<div style="font-size: 12px">Art by <a href="http://gameart2d.com" target="top">gameart2d.com</a></div>
+			</div>
+		</div>
+		<div id="dropZoneRun" style="clear:both; margin: 0px 20px 20px 20px; font: 42px sans-serif; text-align: center; color: #333; background-color: #EEE; padding: 50px; border-style: dashed;">
+			<div>Run an AIA by dragging-and-dropping it here.</div>
+		</div>
+		<div id="dropZoneSave" style="margin: 0px 20px 20px 20px; font: 42px sans-serif; text-align: center; color: #333; background-color: #EEE; padding: 50px; border-style: dashed;">
+			<div>Translate an AIA to HTML5 by dragging-and-dropping it here.</div>
+		</div>
 	</div>
 </body>
 </html>
