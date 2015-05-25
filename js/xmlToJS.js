@@ -146,7 +146,10 @@ function xmlToJS( xml )
 
     function local(name, id)
     {
-        return "_" + (id||usid) + name;
+        var p = stack.length;
+        while( !id && p )
+            p = stack[--p][name];
+        return "_" + id + name;
     }
 
     var isInFunc = false;
@@ -431,19 +434,19 @@ function xmlToJS( xml )
         local_declaration_statement: function( xml, index )
         {
             if( !isInFunc ) return "";
-            ++usid;
+            var tid = ++usid;
             var ctx = {};
             var ret = "";
             for( var i=0; index.$name["VAR" + i]; ++i )
             {
                 var name = index.$name["VAR" + i].textContent;
-                ret += '\tvar _' + usid + safeName(name)
+                ret += '\tvar _' + tid + safeName(name)
                 if( index.$name["DECL" + i] ){
                     ret += " = ";
                     ret += iterate(index.$name["DECL" + i], true);
                 }
                 ret += ";\n";
-                ctx[name] = usid;
+                ctx[name] = tid;
             }
             stack.push( ctx );
             ret += iterate( index.statement[0], false );
@@ -454,19 +457,19 @@ function xmlToJS( xml )
         local_declaration_expression: function( xml, index )
         {
             if( !isInFunc ) return "";
-            ++usid;
+            var tid = ++usid;
             var ctx = {};
             var ret = "(function(){\n";
             for( var i=0; index.$name["VAR" + i]; ++i )
             {
                 var name = index.$name["VAR" + i].textContent;
-                ret += '\tvar _' + usid + safeName(name);
+                ret += '\tvar _' + tid + safeName(name);
                 if( index.$name["DECL" + i] ){
                     ret += " = ";
                     ret += iterate(index.$name["DECL" + i], true);
                 }
                 ret += ";\n";
-                ctx[name] = usid;
+                ctx[name] = tid;
             }
             stack.push( ctx );
             ret += "return " + iterate(index.$name.RETURN, true) + ";\n}).apply(this)";

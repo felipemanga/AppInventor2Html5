@@ -117,7 +117,7 @@ defineComponent("Canvas", "ComponentContainer", function Canvas( ui )
     this.SUPER( ui, "canvas" );
     var ctx = this.ctx2d = this.dom.getContext("2d");
     this.__dirty = this.children && !!this.children.length;
-	this.BackgroundColor = new LIB.Color([255,255,255,255]);
+	if( !ui.BackgroundColor ) this.BackgroundColor = new LIB.Color([255,255,255,255]);
 	this.PaintColor = new LIB.Color(0,0,0);
 	this.addMethod( "Clear", function(){
 		this.dom.height = this.Height;
