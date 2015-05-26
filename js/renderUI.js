@@ -194,6 +194,7 @@ prepare(Component, null, {
     },
     get$Enabled:true,
     set$Enabled:function(v){
+    	if( v && typeof v == "string" ) v = v.toLowerCase() != "false";
     	v=!!v;
     	this.__properties.Enabled = v;
     	if( this.dom && ("disabled" in this.dom) )

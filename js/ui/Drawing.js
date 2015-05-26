@@ -189,6 +189,26 @@ defineComponent("Canvas", "ComponentContainer", function Canvas( ui )
 		px = x2; py = y2;
 	});
 },{
+	__onclick:function(com, evt){
+		var pick = null;
+		var pickZ = null;
+		for( var i=0, c; c=this.children[i]; ++i )
+		{
+			if( !c.ui || !c.Enabled || !c.Visible ) continue;
+			var name=c.ui.$Name;
+			var l = c.__properties.X;
+			var t = c.__properties.Y;
+			var b = t + c.__properties.Height;
+			var r = l + c.__properties.Width;
+			if( evt.x >= l && evt.x <= r && evt.y >= t && evt.y <= b && !(pickZ>c.__properties.Z) )
+			{
+				pick = c;
+				pickZ = c.__properties.Z;
+			}
+		}
+		if( pick && this.screen[pick.ui.$Name + "_Touched"] ) this.screen[pick.ui.$Name + "_Touched"]({x:evt.x, y:evt.y});
+		if( this.screen[this.$Name + "_Touched"] ) this.screen[this.$Name + "_Touched"]({x:evt.x, y:evt.y, touchedAnySprite:pick});
+	},
 	set$__dirty:function(d){
 		if( this.__properties.__dirty == d ) return;
 		this.__properties.__dirty = d;
