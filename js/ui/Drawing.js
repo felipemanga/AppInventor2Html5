@@ -17,7 +17,7 @@ function __redrawCanvases(){
 		for( var j=0, child; child=sorted[j]; ++j )
 		{
 			var image = child.__image;
-			if( !image || !image.__isLoaded || !child.__properties.Visible || !child.__properties.Enabled ) 
+			if( !image || !image.__isLoaded || !child.__properties.Visible ) 
 				continue;
 			var w = child.Width, h = child.Height;
 			if( !w || !h ) continue;
@@ -117,6 +117,13 @@ defineComponent("Canvas", "ComponentContainer", function Canvas( ui )
     this.SUPER( ui, "canvas" );
     var ctx = this.ctx2d = this.dom.getContext("2d");
     this.__dirty = this.children && !!this.children.length;
+
+	if( this.children )
+	{
+		for( var i=0, c; c=this.children[i]; ++i )
+			c.Z = c.Z || i/1000;
+	}
+
 	if( !ui.BackgroundColor ) this.BackgroundColor = new LIB.Color([255,255,255,255]);
 	this.PaintColor = new LIB.Color(0,0,0);
 	this.addMethod( "Clear", function(){
