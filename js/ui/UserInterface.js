@@ -138,8 +138,48 @@ defineComponent("WebViewer", "Component", function( ui ){
 
 defineComponent("Spinner", "Component", function( ui ){
     this.SUPER(ui, "select");
-    this.Elements = [];
+    if( !this.Elements) this.Elements = [];
+},{
+	onchange:function( com ){
+		if( com.screen[com.$Name + "_AfterPicking"] )
+			com.screen[com.$Name + "_AfterPicking"]({selection: com.dom.value});
+	},
+	get$Selection: function(){
+		return this.dom.value;
+	},
+	get$SelectionIndex: function(){
+		return this.Elements.indexOf( this.Selection )+1;
+	},
+	__handle: null,
+	__update:function(){
+		if( this.__handle ) clearTimeout( this.__handle );
+		this.__handle = setTimeout( this.__update.bind(this), 500 );
+		if( !document.body.contains(this.dom) ) return;
+
+		var els = this.__properties.Elements;
+		while( this.dom.children.length > els.length )
+			this.dom.removeChild( this.dom.children[ this.dom.children.length-1 ] );
+		
+		while( this.dom.children.length < els.length )
+			DOC.create("option", this.dom);
+
+		for( var i=0; i<els.length; ++i )
+		{
+			var child = this.dom.children[i];
+			child.textContent = child.value = els[i];
+		}
+	},
+	set$Elements: function(els){
+		els = els || [];
+		if( els == this.__properties.Elements ) return;
+		this.__properties.Elements = els;
+		this.__update();
+	},
+	set$ElementsFromString:function(str){
+		this.Elements = ("" || str).split(",").map(function(x){return x.trim();});
+	}
 });
+
 
 defineComponent("Notifier", "Component", function( ui ){
 	this.SUPER(ui);
